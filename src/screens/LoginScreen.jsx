@@ -23,7 +23,7 @@ export default function LoginScreen() {
     try {
       const { data, error: dbErr } = await supabase
         .from('participants')
-        .insert({ name: name.trim(), avatar: selectedAvatar, score: 0, has_answered: false })
+        .insert({ name: name.trim(), avatar: selectedAvatar, score: 0, has_answered: false, powerups: {} })
         .select()
         .single()
       if (dbErr) throw dbErr

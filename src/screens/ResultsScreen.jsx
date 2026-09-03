@@ -5,6 +5,7 @@ import { AVATARS } from '../lib/avatars'
 import { supabase } from '../lib/supabase'
 import Confetti from '../components/Confetti'
 import WinnerDiploma from '../components/WinnerDiploma'
+import ScoreBreakdown from '../components/ScoreBreakdown'
 import { roastFor } from '../lib/roasts'
 
 const PHASES = ['suspense', 'podium', 'ranking']
@@ -17,7 +18,7 @@ export default function ResultsScreen() {
 
   const guests = [...participants]
     .filter(p => !p.is_admin)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
 
   const allZero = guests.length > 0 && guests.every(p => p.score === 0)
 
@@ -34,10 +35,8 @@ export default function ResultsScreen() {
   }, [])
 
   useEffect(() => {
-    if (showAnswers) {
-      supabase.from('answers').select('*').then(({ data }) => setAllAnswers(data || []))
-    }
-  }, [showAnswers])
+    supabase.from('answers').select('*').then(({ data }) => setAllAnswers(data || []))
+  }, [])
 
   const handleShowAnswers = async () => {
     await supabase.from('game_state').update({ show_answers: true }).eq('id', 1)
@@ -46,7 +45,7 @@ export default function ResultsScreen() {
 
   const handleRestart = async () => {
     await supabase.from('game_state').update({ status: 'waiting', current_question: 0, show_answers: false }).eq('id', 1)
-    await supabase.from('participants').update({ score: 0, has_answered: false }).neq('id', 'none')
+    await supabase.from('participants').update({ score: 0, has_answered: false, powerups: {} }).neq('id', 'none')
     await supabase.from('answers').delete().neq('id', 0)
   }
 
@@ -276,11 +275,12 @@ function PodiumPhase({ guests }) {
 // ── RANKING PHASE ───────────────────────────────────────────────
 function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onShowAnswers, onRestart }) {
   const allZero = guests.every(p => p.score === 0)
+  const [showBreakdown, setShowBreakdown] = useState(false)
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-2xl mx-auto space-y-4 py-4"
+      className="w-full max-w-4xl mx-auto space-y-4 py-4"
     >
       <h1 className={`font-party text-4xl text-center ${guests.every(p => p.score === 0) ? 'text-red-400' : 'text-blue-400'}`}>
         {guests.every(p => p.score === 0) ? '💀 Ranking del Desastre' : '🏆 Ranking Final'}
@@ -344,6 +344,18 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
 
       {!allZero && guests[0] && (
         <WinnerDiploma winner={guests[0]} />
+      )}
+
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowBreakdown(v => !v)}
+        className="w-full py-3 bg-blue-800 hover:bg-blue-700 rounded-xl font-bold transition-all"
+      >
+        {showBreakdown ? '🙈 Ocultar desglose' : '📊 Ver desglose de puntajes'}
+      </motion.button>
+
+      {showBreakdown && (
+        <ScoreBreakdown guests={guests} questions={questions} answers={allAnswers} />
       )}
 
       {/* Answers section */}

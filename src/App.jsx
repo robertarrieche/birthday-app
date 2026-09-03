@@ -34,7 +34,7 @@ export default function App() {
           // Participant was cleaned up — re-insert them
           const { data: reinserted, error } = await supabase
             .from('participants')
-            .insert({ id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar, score: 0, has_answered: false })
+            .insert({ id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar, score: 0, has_answered: false, powerups: {} })
             .select()
             .single()
           if (error) {

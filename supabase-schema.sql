@@ -19,6 +19,7 @@ create table if not exists participants (
   score numeric not null default 0,
   has_answered boolean not null default false,
   is_admin boolean not null default false,
+  powerups jsonb not null default '{}'::jsonb,
   created_at timestamptz default now()
 );
 
@@ -63,3 +64,4 @@ alter publication supabase_realtime add table participants;
 -- Existing projects: run this once
 -- ALTER TABLE questions ADD COLUMN IF NOT EXISTS hint text;
 -- ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_bomb boolean default false;
+-- ALTER TABLE participants ADD COLUMN IF NOT EXISTS powerups jsonb default '{}'::jsonb;

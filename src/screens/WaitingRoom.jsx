@@ -10,9 +10,11 @@ export default function WaitingRoom() {
 
   const handleStartExam = async () => {
     const questionEndsAt = new Date(Date.now() + 30 * 1000).toISOString()
+    await supabase.from('answers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await supabase.from('participants').update({ score: 0, has_answered: false, powerups: {} }).neq('id', 'none')
     await supabase
       .from('game_state')
-      .update({ status: 'exam', current_question: 0, question_ends_at: questionEndsAt })
+      .update({ status: 'exam', current_question: 0, question_ends_at: questionEndsAt, show_answers: false })
       .eq('id', 1)
   }
 

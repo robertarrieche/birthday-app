@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   DndContext,
@@ -16,11 +16,17 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import PowerupBar from './PowerupBar'
+import { parsePowerups, questionCorrectList } from '../lib/score'
 
-export default function QuestionCard({ question, onAnswer, answered, isAdmin }) {
+export default function QuestionCard({ question, onAnswer, answered, isAdmin, powerups, onUsePowerup }) {
   const [selected, setSelected] = useState([])
-  const [hintOpen, setHintOpen] = useState(false)
+  const parsedPowerups = parsePowerups(powerups)
   const hint = (question.hint || '').trim()
+  const hintOpen = String(parsedPowerups.hintQid) === String(question.id)
+  const luckyActive = String(parsedPowerups.luckyQid) === String(question.id)
+  const discardActive = String(parsedPowerups.discardQid) === String(question.id)
+  const discardedOption = discardActive ? parsedPowerups.discardOption : null
   const [orderItems, setOrderItems] = useState(() => {
     if (question.type === 'order') {
       // Always shuffle — correct order is stored in correct_answer, not options
@@ -42,6 +48,12 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
   )
 
   const options = Array.isArray(question.options) ? question.options : JSON.parse(question.options || '[]')
+  const visibleOptions = discardedOption ? options.filter(opt => opt !== discardedOption) : options
+
+  useEffect(() => {
+    if (!discardedOption) return
+    setSelected(prev => prev.filter(opt => opt !== discardedOption))
+  }, [discardedOption])
 
   const toggleSingle = (opt) => {
     if (answered || isAdmin) return
@@ -99,21 +111,10 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
             💣 VALE x2
           </span>
         )}
-        {!isAdmin && hint && (
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setHintOpen(v => !v)}
-            className={`ml-auto text-xl rounded-full w-9 h-9 flex items-center justify-center border-2 transition-colors ${
-              hintOpen
-                ? 'border-yellow-400 bg-yellow-900/50'
-                : 'border-yellow-600/60 bg-slate-800/80 hover:border-yellow-400'
-            }`}
-            title={hintOpen ? 'Ocultar pista' : 'Ver pista'}
-            aria-label={hintOpen ? 'Ocultar pista' : 'Ver pista'}
-          >
-            💡
-          </motion.button>
+        {luckyActive && (
+          <span className="text-xs font-party tracking-wide px-2 py-1 rounded-full bg-green-800 text-green-200 border border-green-500">
+            🍀 x2 / -1
+          </span>
         )}
       </div>
 
@@ -137,7 +138,7 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
 
       {/* Options */}
       <div className="flex-1 space-y-3">
-        {question.type === 'single' && options.map((opt, i) => (
+        {question.type === 'single' && visibleOptions.map((opt, i) => (
           <motion.button
             key={i}
             whileTap={!answered && !isAdmin ? { scale: 0.97 } : {}}
@@ -154,7 +155,7 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
           </motion.button>
         ))}
 
-        {question.type === 'multiple' && options.map((opt, i) => (
+        {question.type === 'multiple' && visibleOptions.map((opt, i) => (
           <motion.button
             key={i}
             whileTap={!answered && !isAdmin ? { scale: 0.97 } : {}}
@@ -190,7 +191,25 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
 
       {/* Submit button (guests only) */}
       {!isAdmin && (
-        <motion.button
+        <>
+          <PowerupBar
+            luckyUsed={!!parsedPowerups.luckyQid}
+            luckyActive={luckyActive}
+            luckyDisabled={answered || !!parsedPowerups.luckyQid}
+            discardUsed={!!parsedPowerups.discardQid}
+            discardActive={discardActive}
+            discardDisabled={
+              answered ||
+              !!parsedPowerups.discardQid ||
+              question.type === 'order' ||
+              questionCorrectList(question).length >= options.length
+            }
+            hintUsed={!!parsedPowerups.hintQid}
+            hintActive={hintOpen}
+            hintDisabled={answered || !!parsedPowerups.hintQid || !hint}
+            onUse={onUsePowerup}
+          />
+          <motion.button
           whileTap={!answered ? { scale: 0.95 } : {}}
           onClick={handleSubmit}
           disabled={answered || (question.type !== 'order' && selected.length === 0)}
@@ -202,6 +221,7 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
         >
           {answered ? '✅ Respuesta enviada' : '📨 Enviar respuesta'}
         </motion.button>
+        </>
       )}
     </div>
   )

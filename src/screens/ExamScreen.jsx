@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { AVATARS, REACTION_EMOJIS } from '../lib/avatars'
 import CountdownTimer from '../components/CountdownTimer'
 import QuestionCard from '../components/QuestionCard'
+import { totalScores, parsePowerups, pickDiscardOption } from '../lib/score'
 
 const QUESTION_TIME = 30
 
@@ -19,6 +20,31 @@ export default function ExamScreen() {
   const [answered, setAnswered] = useState(false)
   const [timeKey, setTimeKey] = useState(0)
   const questionEndsAt = gameState?.question_ends_at
+
+  const me = participants.find(p => String(p.id) === String(currentUser?.id))
+  const myPowerups = parsePowerups(me?.powerups)
+
+  const handleUsePowerup = async (type) => {
+    if (!currentUser || currentUser.isAdmin || answered || !question) return
+    const current = parsePowerups(me?.powerups)
+    let next = { ...current }
+
+    if (type === 'lucky') {
+      if (current.luckyQid) return
+      next.luckyQid = question.id
+    } else if (type === 'hint') {
+      if (current.hintQid || !(question.hint || '').trim()) return
+      next.hintQid = question.id
+    } else if (type === 'discard') {
+      if (current.discardQid || question.type === 'order') return
+      const option = pickDiscardOption(question)
+      if (!option) return
+      next.discardQid = question.id
+      next.discardOption = option
+    }
+
+    await supabase.from('participants').update({ powerups: next }).eq('id', currentUser.id)
+  }
 
   // Reset answered state when question changes
   useEffect(() => {
@@ -37,8 +63,8 @@ export default function ExamScreen() {
     await supabase.from('answers').upsert({
       participant_id: currentUser.id,
       question_id: question.id,
-      answer: JSON.stringify(answer),
-    })
+      answer,
+    }, { onConflict: 'participant_id,question_id' })
     await supabase.from('participants').update({ has_answered: true }).eq('id', currentUser.id)
   }, [answered, currentUser, question])
 
@@ -62,58 +88,13 @@ export default function ExamScreen() {
   const calculateScores = async () => {
     const { data: allAnswers } = await supabase.from('answers').select('*')
     const { data: allQuestions } = await supabase.from('questions').select('*')
-    const { data: parts } = await supabase.from('participants').select('*').eq('is_admin', false)
+    const { data: parts } = await supabase.from('participants').select('*')
 
-    const scores = {}
-    parts.forEach(p => { scores[p.id] = 0 })
+    const scores = totalScores(parts || [], allQuestions || [], allAnswers || [])
 
-    allAnswers?.forEach(ans => {
-      const q = allQuestions?.find(q => q.id === ans.question_id)
-      if (!q) return
-
-      // Normalize: always parse strings to their real value
-      const parse = (v) => {
-        if (Array.isArray(v)) return v
-        if (typeof v === 'string') {
-          try { return JSON.parse(v) } catch { return v }
-        }
-        return v
-      }
-
-      const given = parse(ans.answer)
-      const correct = parse(q.correct_answer)
-      let points = 0
-      const normalize = (v) => String(v ?? '').trim()
-
-      if (q.type === 'single') {
-        // given is a string like "Opción A", correct is ["Opción A"]
-        const correctVal = Array.isArray(correct) ? correct[0] : correct
-        const givenVal = Array.isArray(given) ? given[0] : given
-        if (normalize(givenVal) === normalize(correctVal)) points = 1
-
-      } else if (q.type === 'multiple') {
-        const correctArr = (Array.isArray(correct) ? correct : [correct]).map(normalize)
-        const givenArr = (Array.isArray(given) ? given : [given]).map(normalize)
-        const hits = givenArr.filter(g => correctArr.includes(g)).length
-        points = correctArr.length > 0 ? hits / correctArr.length : 0
-
-      } else if (q.type === 'order') {
-        const correctArr = (Array.isArray(correct) ? correct : [correct]).map(normalize)
-        const givenArr = (Array.isArray(given) ? given : [given]).map(normalize)
-        const correctCount = correctArr.filter((item, idx) => givenArr[idx] === item).length
-        points = correctArr.length > 0 ? correctCount / correctArr.length : 0
-      }
-
-      if (scores[ans.participant_id] !== undefined) {
-        const multiplier = q.is_bomb ? 2 : 1
-        scores[ans.participant_id] += points * multiplier
-      }
-    })
-
-    // Update scores
     await Promise.all(
       Object.entries(scores).map(([id, score]) =>
-        supabase.from('participants').update({ score: Math.round(score * 100) / 100 }).eq('id', id)
+        supabase.from('participants').update({ score }).eq('id', id)
       )
     )
   }
@@ -202,6 +183,8 @@ export default function ExamScreen() {
                 onAnswer={handleAnswer}
                 answered={answered}
                 isAdmin={currentUser?.isAdmin}
+                powerups={myPowerups}
+                onUsePowerup={handleUsePowerup}
               />
             </motion.div>
           </AnimatePresence>
