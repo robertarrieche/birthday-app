@@ -19,6 +19,8 @@ import { CSS } from '@dnd-kit/utilities'
 
 export default function QuestionCard({ question, onAnswer, answered, isAdmin }) {
   const [selected, setSelected] = useState([])
+  const [hintOpen, setHintOpen] = useState(false)
+  const hint = (question.hint || '').trim()
   const [orderItems, setOrderItems] = useState(() => {
     if (question.type === 'order') {
       // Always shuffle — correct order is stored in correct_answer, not options
@@ -90,12 +92,41 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
            question.type === 'multiple' ? '🟣 Múltiple' :
            '🟠 Ordenar'}
         </span>
+        {!isAdmin && hint && (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setHintOpen(v => !v)}
+            className={`ml-auto text-xl rounded-full w-9 h-9 flex items-center justify-center border-2 transition-colors ${
+              hintOpen
+                ? 'border-yellow-400 bg-yellow-900/50'
+                : 'border-yellow-600/60 bg-slate-800/80 hover:border-yellow-400'
+            }`}
+            title={hintOpen ? 'Ocultar pista' : 'Ver pista'}
+            aria-label={hintOpen ? 'Ocultar pista' : 'Ver pista'}
+          >
+            💡
+          </motion.button>
+        )}
       </div>
 
       {/* Question text */}
       <h2 className="chalk-text font-chalk text-xl md:text-2xl leading-relaxed">
         {question.text}
       </h2>
+
+      <AnimatePresence>
+        {!isAdmin && hint && hintOpen && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="chalk-text font-chalk text-base text-yellow-200/90 bg-yellow-950/40 border border-yellow-700/50 rounded-xl px-4 py-2"
+          >
+            💡 {hint}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Options */}
       <div className="flex-1 space-y-3">

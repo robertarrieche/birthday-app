@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { useGameStore } from '../store/useGameStore'
 
-const EMPTY_QUESTION = { text: '', type: 'single', options: ['', ''], correct_answer: [] }
+const EMPTY_QUESTION = { text: '', type: 'single', hint: '', options: ['', ''], correct_answer: [] }
 
 export default function AdminPanel({ onClose }) {
   const questions = useGameStore(s => s.questions)
@@ -13,11 +13,12 @@ export default function AdminPanel({ onClose }) {
       ? questions.map(q => ({
           ...q,
           options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
+          hint: q.hint || '',
           correct_answer: Array.isArray(q.correct_answer) ? q.correct_answer :
             (typeof q.correct_answer === 'string' && q.correct_answer.startsWith('[')
               ? JSON.parse(q.correct_answer) : [q.correct_answer]),
         }))
-      : [{ ...EMPTY_QUESTION, options: ['', ''], correct_answer: [] }]
+      : [{ ...EMPTY_QUESTION }]
   )
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -28,7 +29,7 @@ export default function AdminPanel({ onClose }) {
 
   const addQuestion = () => {
     if (editList.length >= 20) return
-    setEditList(prev => [...prev, { text: '', type: 'single', options: ['', ''], correct_answer: [] }])
+    setEditList(prev => [...prev, { ...EMPTY_QUESTION }])
   }
 
   const removeQuestion = (idx) => {
@@ -76,7 +77,7 @@ export default function AdminPanel({ onClose }) {
     await supabase.from('questions').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     await supabase.from('participants').update({ score: 0, has_answered: false }).neq('id', 'none')
     await supabase.from('game_state').update({ status: 'waiting', current_question: 0, show_answers: false }).eq('id', 1)
-    setEditList([{ text: '', type: 'single', options: ['', ''], correct_answer: [] }])
+    setEditList([{ ...EMPTY_QUESTION }])
     setQuestions([])
   }
 
@@ -94,13 +95,18 @@ export default function AdminPanel({ onClose }) {
         return {
           text: q.text.trim(),
           type: q.type,
+          hint: (q.hint || '').trim() || null,
           options: JSON.stringify(cleanOpts),
           correct_answer: JSON.stringify(correctAnswer),
           order_index: i,
         }
       })
     const { data, error } = await supabase.from('questions').insert(rows).select()
-    if (!error && data) {
+    if (error) {
+      alert(error.message.includes('hint')
+        ? 'Falta la columna "hint" en Supabase. Ejecuta: ALTER TABLE questions ADD COLUMN IF NOT EXISTS hint text;'
+        : `Error al guardar: ${error.message}`)
+    } else if (data) {
       setQuestions(data)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -170,6 +176,17 @@ export default function AdminPanel({ onClose }) {
                   rows={2}
                   className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
                 />
+
+                <div>
+                  <label className="text-sm text-gray-400 mb-1 block">Pista (opcional)</label>
+                  <input
+                    type="text"
+                    value={q.hint || ''}
+                    onChange={e => updateQ(qIdx, 'hint', e.target.value)}
+                    placeholder="Ej. Piensa en 2019… (el invitado solo la ve si pulsa 💡)"
+                    className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 text-sm"
+                  />
+                </div>
 
                 {/* Type selector */}
                 <div className="flex gap-2">

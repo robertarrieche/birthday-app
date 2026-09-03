@@ -29,6 +29,7 @@ create table if not exists questions (
   type text not null default 'single',   -- 'single' | 'multiple' | 'order'
   options jsonb not null default '[]',
   correct_answer jsonb not null default '[]',
+  hint text,
   order_index int not null default 0,
   created_at timestamptz default now()
 );
@@ -57,3 +58,6 @@ create policy "public read/write answers" on answers for all using (true) with c
 -- Enable realtime for these tables
 alter publication supabase_realtime add table game_state;
 alter publication supabase_realtime add table participants;
+
+-- Existing projects: run this once
+-- ALTER TABLE questions ADD COLUMN IF NOT EXISTS hint text;
