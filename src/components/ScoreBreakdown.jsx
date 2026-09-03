@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { AVATARS } from '../lib/avatars'
 import { buildScoreBreakdown, isBombQuestion } from '../lib/score'
+import AvatarFace from './AvatarFace'
 
 function formatPts(value) {
   if (value == null) return '—'
@@ -40,14 +40,15 @@ export default function ScoreBreakdown({ guests, questions, answers }) {
         </thead>
         <tbody>
           {rows.map(({ participant, perQuestion, total }) => {
-            const avatar = AVATARS.find(a => a.id === participant.avatar)
             const rankingScore = Number(participant.score || 0)
             const matches = Math.abs(rankingScore - total) < 0.001
             return (
               <tr key={participant.id} className="border-t border-slate-700">
                 <td className="p-2 sticky left-0 bg-slate-800 z-10 font-medium whitespace-nowrap">
-                  <span className="mr-1">{avatar?.emoji}</span>
-                  {participant.name}
+                  <span className="inline-flex items-center gap-2">
+                    <AvatarFace avatar={participant.avatar} size="xs" />
+                    {participant.name}
+                  </span>
                 </td>
                 {perQuestion.map(cell => (
                   <td

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
-import { AVATARS } from '../lib/avatars'
+import { AVATARS, compressSelfie, isPhotoAvatar } from '../lib/avatars'
 import { useGameStore } from '../store/useGameStore'
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'robert2026'
@@ -11,13 +11,15 @@ export default function LoginScreen() {
   const [mode, setMode] = useState('choose') // 'choose' | 'guest' | 'admin'
   const [name, setName] = useState('')
   const [selectedAvatar, setSelectedAvatar] = useState(null)
+  const [selfieBusy, setSelfieBusy] = useState(false)
+  const selfieInputRef = useRef(null)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleGuestJoin = async () => {
     if (!name.trim()) return setError('Escribe tu nombre')
-    if (!selectedAvatar) return setError('Elige un avatar')
+    if (!selectedAvatar) return setError('Elige un avatar o tómate una selfie')
     setLoading(true)
     setError('')
     try {
@@ -57,6 +59,21 @@ export default function LoginScreen() {
       setError(e.message || 'Error')
     }
     setLoading(false)
+  }
+
+  const handleSelfie = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setSelfieBusy(true)
+    setError('')
+    try {
+      const dataUrl = await compressSelfie(file)
+      setSelectedAvatar(dataUrl)
+    } catch {
+      setError('No se pudo usar esa foto. Probá de nuevo.')
+    }
+    setSelfieBusy(false)
   }
 
   return (
@@ -139,6 +156,32 @@ export default function LoginScreen() {
               
               <div>
                 <h2 className="text-xl font-bold text-blue-300 mb-3">Elige tu avatar</h2>
+                <input
+                  ref={selfieInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  className="hidden"
+                  onChange={handleSelfie}
+                />
+                <button
+                  type="button"
+                  onClick={() => selfieInputRef.current?.click()}
+                  disabled={selfieBusy}
+                  className={`w-full mb-3 py-3 rounded-xl border-2 font-bold transition-all ${
+                    isPhotoAvatar(selectedAvatar)
+                      ? 'border-blue-400 bg-blue-900/40'
+                      : 'border-dashed border-blue-600 bg-slate-700/50 hover:border-blue-400'
+                  }`}
+                >
+                  {selfieBusy ? '📸 Procesando...' : isPhotoAvatar(selectedAvatar) ? '📸 Cambiar selfie' : '📸 Tomarme una selfie'}
+                </button>
+                {isPhotoAvatar(selectedAvatar) && (
+                  <div className="flex justify-center mb-3">
+                    <img src={selectedAvatar} alt="Tu selfie" className="w-20 h-20 rounded-full object-cover border-4 border-blue-400" />
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 text-center mb-2">o elige un emoji</p>
                 <div className="grid grid-cols-4 gap-2">
                   {AVATARS.map(av => (
                     <motion.button

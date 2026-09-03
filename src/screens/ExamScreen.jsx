@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
 import { supabase } from '../lib/supabase'
-import { AVATARS, REACTION_EMOJIS } from '../lib/avatars'
+import { REACTION_EMOJIS } from '../lib/avatars'
 import CountdownTimer from '../components/CountdownTimer'
 import QuestionCard from '../components/QuestionCard'
+import AvatarFace from '../components/AvatarFace'
 import { totalScores, parsePowerups, pickDiscardOption } from '../lib/score'
 
 const QUESTION_TIME = 30
@@ -197,7 +198,6 @@ export default function ExamScreen() {
           </h3>
           <div className="space-y-2">
             {guests.map(p => {
-              const avatar = AVATARS.find(a => a.id === p.avatar)
               return (
                 <motion.div
                   key={p.id}
@@ -206,7 +206,7 @@ export default function ExamScreen() {
                     p.has_answered ? 'bg-green-900/40 border border-green-700' : 'bg-slate-700/50'
                   }`}
                 >
-                  <span className="text-xl">{avatar?.emoji || '👤'}</span>
+                  <AvatarFace avatar={p.avatar} size="sm" />
                   <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
                   {p.has_answered ? (
                     <motion.span

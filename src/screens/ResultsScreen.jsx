@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
-import { AVATARS } from '../lib/avatars'
 import { supabase } from '../lib/supabase'
 import Confetti from '../components/Confetti'
 import WinnerDiploma from '../components/WinnerDiploma'
 import ScoreBreakdown from '../components/ScoreBreakdown'
+import AvatarFace from '../components/AvatarFace'
 import { roastFor } from '../lib/roasts'
 
 const PHASES = ['suspense', 'podium', 'ranking']
@@ -168,7 +168,6 @@ function ShamePhase({ guests }) {
       {/* Fallen avatars */}
       <div className="flex gap-6 flex-wrap justify-center mt-4">
         {guests.map((p, i) => {
-          const avatar = AVATARS.find(a => a.id === p.avatar)
           return (
             <motion.div
               key={p.id}
@@ -177,7 +176,7 @@ function ShamePhase({ guests }) {
               transition={{ delay: 1.2 + i * 0.15, type: 'spring', stiffness: 80, damping: 8 }}
               className="flex flex-col items-center gap-1"
             >
-              <span className="text-5xl">{avatar?.emoji || '👤'}</span>
+              <AvatarFace avatar={p.avatar} size="lg" />
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -236,7 +235,6 @@ function PodiumPhase({ guests }) {
 
       <div className="flex items-end gap-4 justify-center">
         {podiumOrder.map((p, i) => {
-          const avatar = AVATARS.find(a => a.id === p.avatar)
           const height = heights[i]
           return (
             <motion.div
@@ -253,7 +251,7 @@ function PodiumPhase({ guests }) {
               >
                 {medals[i]}
               </motion.div>
-              <div className="text-4xl">{avatar?.emoji}</div>
+              <AvatarFace avatar={p.avatar} size="md" />
               <p className="font-bold text-sm text-center max-w-20 truncate">{p.name}</p>
               <p className="text-blue-300 font-chalk text-sm">{p.score} pts</p>
               <motion.div
@@ -288,7 +286,6 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
 
       <div className="space-y-3">
         {guests.map((p, idx) => {
-          const avatar = AVATARS.find(a => a.id === p.avatar)
           const isFirst = idx === 0
           return (
             <motion.div
@@ -309,8 +306,8 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
                 {allZero ? '💀' : idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
               </div>
               {/* Avatar — fallen if all zero */}
-              <div className={`${isFirst && !allZero ? 'text-4xl' : 'text-3xl'} ${allZero ? 'rotate-90' : ''} transition-transform`}>
-                {avatar?.emoji}
+              <div className={`${allZero ? 'rotate-90' : ''} transition-transform`}>
+                <AvatarFace avatar={p.avatar} size={isFirst && !allZero ? 'md' : 'sm'} />
               </div>
               {/* Name */}
               <div className="flex-1 min-w-0">

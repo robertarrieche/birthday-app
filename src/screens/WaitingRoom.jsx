@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
-import { AVATARS, REACTION_EMOJIS } from '../lib/avatars'
+import { REACTION_EMOJIS } from '../lib/avatars'
 import { supabase } from '../lib/supabase'
+import AvatarFace from '../components/AvatarFace'
 
 export default function WaitingRoom() {
   const { participants, currentUser } = useGameStore()
@@ -111,8 +112,6 @@ export default function WaitingRoom() {
 }
 
 function SeatCard({ participant, delay, isAdmin }) {
-  const avatar = AVATARS.find(a => a.id === participant.avatar)
-
   const handleKick = async () => {
     if (!window.confirm(`¿Sacar a ${participant.name} de la sala?`)) return
     await supabase.from('participants').delete().eq('id', participant.id)
@@ -139,8 +138,8 @@ function SeatCard({ participant, delay, isAdmin }) {
       )}
 
       <div className="relative">
-        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-blue-900/60 border-2 border-blue-500 flex items-center justify-center text-4xl">
-          {avatar?.emoji || '👤'}
+        <div className="w-16 h-16 md:w-20 md:h-20">
+          <AvatarFace avatar={participant.avatar} size="lg" className="w-full h-full" />
         </div>
         <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900" />
       </div>

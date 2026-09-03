@@ -1,6 +1,15 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AVATARS } from '../lib/avatars'
+import { avatarEmoji, isPhotoAvatar } from '../lib/avatars'
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
 
 export default function WinnerDiploma({ winner }) {
   const canvasRef = useRef(null)
@@ -8,9 +17,7 @@ export default function WinnerDiploma({ winner }) {
 
   if (!winner) return null
 
-  const avatar = AVATARS.find(a => a.id === winner.avatar)
-
-  const download = () => {
+  const download = async () => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -48,21 +55,45 @@ export default function WinnerDiploma({ winner }) {
 
     ctx.font = '120px sans-serif'
     ctx.fillText('👑', w / 2, 430)
-    ctx.font = '140px sans-serif'
-    ctx.fillText(avatar?.emoji || '🎓', w / 2, 580)
+
+    if (isPhotoAvatar(winner.avatar)) {
+      try {
+        const img = await loadImage(winner.avatar)
+        const size = 220
+        const x = w / 2 - size / 2
+        const y = 460
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(w / 2, y + size / 2, size / 2, 0, Math.PI * 2)
+        ctx.clip()
+        ctx.drawImage(img, x, y, size, size)
+        ctx.restore()
+        ctx.strokeStyle = '#60a5fa'
+        ctx.lineWidth = 8
+        ctx.beginPath()
+        ctx.arc(w / 2, y + size / 2, size / 2, 0, Math.PI * 2)
+        ctx.stroke()
+      } catch {
+        ctx.font = '140px sans-serif'
+        ctx.fillText(avatarEmoji(winner.avatar), w / 2, 580)
+      }
+    } else {
+      ctx.font = '140px sans-serif'
+      ctx.fillText(avatarEmoji(winner.avatar), w / 2, 580)
+    }
 
     ctx.fillStyle = '#fde68a'
     ctx.font = 'bold 56px Inter, sans-serif'
-    ctx.fillText(winner.name, w / 2, 680)
+    ctx.fillText(winner.name, w / 2, 760)
 
     ctx.fillStyle = '#93c5fd'
     ctx.font = '36px Inter, sans-serif'
-    ctx.fillText(`${winner.score} puntos`, w / 2, 750)
+    ctx.fillText(`${winner.score} puntos`, w / 2, 820)
 
     ctx.fillStyle = '#cbd5e1'
     ctx.font = '28px "Patrick Hand", cursive, sans-serif'
-    ctx.fillText('Ganó el examen sobre el cumpleañero', w / 2, 860)
-    ctx.fillText('y demostró saber demasiado 👀', w / 2, 910)
+    ctx.fillText('Ganó el examen sobre el cumpleañero', w / 2, 920)
+    ctx.fillText('y demostró saber demasiado 👀', w / 2, 970)
 
     ctx.fillStyle = '#64748b'
     ctx.font = '22px Inter, sans-serif'
