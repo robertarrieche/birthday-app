@@ -4,6 +4,8 @@ import { useGameStore } from '../store/useGameStore'
 import { AVATARS } from '../lib/avatars'
 import { supabase } from '../lib/supabase'
 import Confetti from '../components/Confetti'
+import WinnerDiploma from '../components/WinnerDiploma'
+import { roastFor } from '../lib/roasts'
 
 const PHASES = ['suspense', 'podium', 'ranking']
 
@@ -311,9 +313,12 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
                 {avatar?.emoji}
               </div>
               {/* Name */}
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className={`font-bold ${isFirst && !allZero ? 'text-xl text-yellow-200' : 'text-base text-white'}`}>
                   {p.name}
+                </p>
+                <p className={`font-chalk text-sm leading-tight ${allZero ? 'text-red-300/80' : 'text-gray-400'}`}>
+                  {roastFor(idx, guests.length, allZero)}
                 </p>
               </div>
               {/* Score */}
@@ -325,17 +330,21 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
         })}
 
         {/* Last place funny message */}
-        {guests.length > 1 && (
+        {guests.length > 1 && !allZero && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: guests.length * 0.1 + 0.5 }}
             className="text-center text-gray-500 font-chalk text-sm"
           >
-            🏅 {guests[guests.length - 1]?.name}: Premio a la lealtad incondicional 😂
+            🏅 {guests[guests.length - 1]?.name} se lleva el premio consuelo
           </motion.p>
         )}
       </div>
+
+      {!allZero && guests[0] && (
+        <WinnerDiploma winner={guests[0]} />
+      )}
 
       {/* Answers section */}
       {showAnswers && (
@@ -357,7 +366,10 @@ function RankingPhase({ guests, questions, showAnswers, allAnswers, isAdmin, onS
                 transition={{ delay: i * 0.05 }}
                 className="blackboard rounded-xl p-4 space-y-2"
               >
-                <p className="chalk-text font-chalk font-bold">{i + 1}. {q.text}</p>
+                <p className="chalk-text font-chalk font-bold">
+                  {i + 1}. {q.text}
+                  {q.is_bomb ? ' 💣 x2' : ''}
+                </p>
                 <div className="space-y-1">
                   {opts.map((opt, j) => (
                     <div key={j} className={`px-3 py-1 rounded-lg text-sm font-chalk ${

@@ -105,7 +105,8 @@ export default function ExamScreen() {
       }
 
       if (scores[ans.participant_id] !== undefined) {
-        scores[ans.participant_id] += points
+        const multiplier = q.is_bomb ? 2 : 1
+        scores[ans.participant_id] += points * multiplier
       }
     })
 
@@ -119,6 +120,7 @@ export default function ExamScreen() {
 
   const guests = participants.filter(p => !p.is_admin)
   const answeredCount = guests.filter(p => p.has_answered).length
+  const isBomb = !!question?.is_bomb
 
   if (!question) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -127,11 +129,40 @@ export default function ExamScreen() {
   )
 
   return (
-    <div className="min-h-screen flex flex-col p-4 relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col p-4 relative overflow-hidden transition-colors duration-500 ${
+      isBomb ? 'alarm-screen' : ''
+    }`}>
+      {isBomb && (
+        <>
+          <div className="pointer-events-none absolute inset-0 alarm-vignette z-0" />
+          <motion.div
+            initial={{ scale: 0.4, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative z-10 flex flex-col items-center mb-3"
+          >
+            <motion.span
+              animate={{ rotate: [-12, 12, -8, 8, 0], scale: [1, 1.18, 1, 1.12, 1] }}
+              transition={{ duration: 0.55, repeat: Infinity }}
+              className="text-6xl drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
+            >
+              💣
+            </motion.span>
+            <motion.div
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 0.7, repeat: Infinity }}
+              className="mt-2 px-5 py-1.5 rounded-full bg-red-600 border-2 border-yellow-300 font-party text-2xl tracking-wider shadow-[0_0_24px_rgba(239,68,68,0.7)]"
+            >
+              ⚠️ VALE x2 ⚠️
+            </motion.div>
+            <p className="font-chalk text-red-200 mt-1 text-sm">¡Pregunta bomba! Doble puntaje</p>
+          </motion.div>
+        </>
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 relative z-10">
         <div>
-          <h1 className="font-party text-2xl text-blue-400">🎂 El Cumple de Robert</h1>
+          <h1 className={`font-party text-2xl ${isBomb ? 'text-red-300' : 'text-blue-400'}`}>🎂 El Cumple de Robert</h1>
           <p className="text-gray-400 text-sm font-chalk">
             Pregunta {qIndex + 1} de {totalQ}
           </p>
@@ -147,7 +178,7 @@ export default function ExamScreen() {
       {/* Progress bar */}
       <div className="w-full h-2 bg-slate-700 rounded-full mb-4 overflow-hidden">
         <motion.div
-          className="h-full bg-blue-500 rounded-full"
+          className={`h-full rounded-full ${isBomb ? 'bg-red-500' : 'bg-blue-500'}`}
           initial={{ width: 0 }}
           animate={{ width: `${((qIndex + 1) / totalQ) * 100}%` }}
           transition={{ duration: 0.5 }}

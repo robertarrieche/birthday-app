@@ -80,10 +80,12 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
   }
 
   return (
-    <div className={`blackboard p-6 rounded-2xl h-full flex flex-col gap-4 ${answered ? 'opacity-75' : ''}`}>
+    <div className={`blackboard p-6 rounded-2xl h-full flex flex-col gap-4 ${answered ? 'opacity-75' : ''} ${
+      question.is_bomb ? 'border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.35)]' : ''
+    }`}>
       {/* Type badge */}
       <div className="flex items-center gap-2">
-        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
           question.type === 'single' ? 'bg-blue-900 text-blue-300' :
           question.type === 'multiple' ? 'bg-purple-900 text-purple-300' :
           'bg-orange-900 text-orange-300'
@@ -92,6 +94,11 @@ export default function QuestionCard({ question, onAnswer, answered, isAdmin }) 
            question.type === 'multiple' ? '🟣 Múltiple' :
            '🟠 Ordenar'}
         </span>
+        {question.is_bomb && (
+          <span className="text-xs font-party tracking-wide px-2 py-1 rounded-full bg-red-600 text-yellow-200 border border-yellow-300 animate-pulse">
+            💣 VALE x2
+          </span>
+        )}
         {!isAdmin && hint && (
           <motion.button
             type="button"

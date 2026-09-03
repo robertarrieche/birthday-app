@@ -89,6 +89,19 @@ body {
   box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
+@keyframes alarm-flash {
+  0%, 100% { background-color: #1a0508; }
+  50% { background-color: #5c0a12; }
+}
+
+.alarm-screen {
+  animation: alarm-flash 0.7s ease-in-out infinite;
+}
+
+.alarm-vignette {
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(127, 29, 29, 0.55) 100%);
+}
+
 /* Countdown ring */
 @keyframes countdown-ring {
   from { stroke-dashoffset: 0; }

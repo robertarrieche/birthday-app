@@ -30,6 +30,7 @@ create table if not exists questions (
   options jsonb not null default '[]',
   correct_answer jsonb not null default '[]',
   hint text,
+  is_bomb boolean not null default false,
   order_index int not null default 0,
   created_at timestamptz default now()
 );
@@ -61,3 +62,4 @@ alter publication supabase_realtime add table participants;
 
 -- Existing projects: run this once
 -- ALTER TABLE questions ADD COLUMN IF NOT EXISTS hint text;
+-- ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_bomb boolean default false;

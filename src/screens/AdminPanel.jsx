@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { useGameStore } from '../store/useGameStore'
 
-const EMPTY_QUESTION = { text: '', type: 'single', hint: '', options: ['', ''], correct_answer: [] }
+const EMPTY_QUESTION = { text: '', type: 'single', hint: '', is_bomb: false, options: ['', ''], correct_answer: [] }
 
 export default function AdminPanel({ onClose }) {
   const questions = useGameStore(s => s.questions)
@@ -14,6 +14,7 @@ export default function AdminPanel({ onClose }) {
           ...q,
           options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
           hint: q.hint || '',
+          is_bomb: !!q.is_bomb,
           correct_answer: Array.isArray(q.correct_answer) ? q.correct_answer :
             (typeof q.correct_answer === 'string' && q.correct_answer.startsWith('[')
               ? JSON.parse(q.correct_answer) : [q.correct_answer]),
@@ -60,6 +61,13 @@ export default function AdminPanel({ onClose }) {
     }))
   }
 
+  const toggleBomb = (qIdx) => {
+    setEditList(prev => prev.map((q, i) => ({
+      ...q,
+      is_bomb: i === qIdx ? !q.is_bomb : false,
+    })))
+  }
+
   const toggleCorrect = (qIdx, opt) => {
     setEditList(prev => prev.map((q, i) => {
       if (i !== qIdx) return q
@@ -96,6 +104,7 @@ export default function AdminPanel({ onClose }) {
           text: q.text.trim(),
           type: q.type,
           hint: (q.hint || '').trim() || null,
+          is_bomb: !!q.is_bomb,
           options: JSON.stringify(cleanOpts),
           correct_answer: JSON.stringify(correctAnswer),
           order_index: i,
@@ -105,6 +114,8 @@ export default function AdminPanel({ onClose }) {
     if (error) {
       alert(error.message.includes('hint')
         ? 'Falta la columna "hint" en Supabase. Ejecuta: ALTER TABLE questions ADD COLUMN IF NOT EXISTS hint text;'
+        : error.message.includes('is_bomb')
+        ? 'Falta la columna "is_bomb" en Supabase. Ejecuta: ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_bomb boolean default false;'
         : `Error al guardar: ${error.message}`)
     } else if (data) {
       setQuestions(data)
@@ -156,16 +167,30 @@ export default function AdminPanel({ onClose }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4"
+                className={`bg-slate-800 border rounded-2xl p-5 space-y-4 ${
+                  q.is_bomb ? 'border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.25)]' : 'border-slate-700'
+                }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="font-bold text-blue-300 text-lg">Pregunta {qIdx + 1}</h3>
-                  <button
-                    onClick={() => removeQuestion(qIdx)}
-                    className="text-red-400 hover:text-red-300 text-sm px-2 py-1 rounded hover:bg-red-900/30 transition-colors"
-                  >
-                    🗑 Eliminar
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleBomb(qIdx)}
+                      className={`text-sm px-3 py-1 rounded-lg font-bold transition-colors ${
+                        q.is_bomb
+                          ? 'bg-red-600 text-white'
+                          : 'bg-slate-700 text-gray-400 hover:bg-red-900/50 hover:text-red-300'
+                      }`}
+                    >
+                      {q.is_bomb ? '💣 Bomba x2' : '💣 Marcar bomba'}
+                    </button>
+                    <button
+                      onClick={() => removeQuestion(qIdx)}
+                      className="text-red-400 hover:text-red-300 text-sm px-2 py-1 rounded hover:bg-red-900/30 transition-colors"
+                    >
+                      🗑 Eliminar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Question text */}
