@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&family=Inter:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --blue-dark: #0f172a;
+  --blue-mid: #1e3a5f;
+  --blue-accent: #3b82f6;
+  --blue-light: #93c5fd;
+  --gray-soft: #94a3b8;
+  --chalk-white: #f8f4e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--blue-dark);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+.font-chalk {
+  font-family: 'Patrick Hand', cursive;
+}
+
+.font-party {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 0.05em;
+}
+
+/* Chalk text effect */
+.chalk-text {
+  font-family: 'Patrick Hand', cursive;
+  color: #f8f4e8;
+  text-shadow:
+    0 0 10px rgba(248, 244, 232, 0.3),
+    1px 1px 0 rgba(0,0,0,0.3);
+}
+
+/* Blackboard */
+.blackboard {
+  background: linear-gradient(135deg, #1a2a1a 0%, #0d1a0d 50%, #1a2a1a 100%);
+  border: 8px solid #5c3a1e;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.5),
+    0 4px 20px rgba(0,0,0,0.6),
+    inset 0 0 60px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.blackboard::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+/* Classroom desk */
+.desk {
+  background: linear-gradient(135deg, #92400e, #78350f);
+  border-radius: 8px 8px 4px 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Avatar seat */
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+/* Countdown ring */
+@keyframes countdown-ring {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 283; }
+}
+
+/* Confetti */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  animation: confetti-fall linear forwards;
+}
